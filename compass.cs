@@ -153,6 +153,16 @@ namespace Compass
                 return;
             }
 
+            // Don't draw if not final pass
+            if (Event.current.type != EventType.Repaint)
+                return;
+            // Hide when active UI
+            if (Cursor.visible)
+                return;
+            // Hide when no camera is active
+            if (Camera.main == null || !Camera.main.enabled)
+                return;
+
             EnsureTextures();
 
             float yaw = Mathf.Repeat(_target.eulerAngles.y, 360f);
