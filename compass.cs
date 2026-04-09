@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace compass
+namespace Compass
 {
     // Duckov 로더가 찾는 엔트리 포인트
     public class ModBehaviour : Duckov.Modding.ModBehaviour
@@ -15,11 +15,11 @@ namespace compass
 
                 go.AddComponent<SimpleCompassHUD>();
 
-                Debug.Log("[Compass] ModBehaviour.OnAfterSetup - HUD 초기화 완료");
+                Debug.Log("[Compass] ModBehaviour.OnAfterSetup - HUD initialized");
             }
             catch (Exception ex)
             {
-                Debug.Log("[Compass] 초기화 예외: " + ex);
+                Debug.Log("[Compass] Init exception: " + ex);
             }
         }
     }
@@ -226,10 +226,10 @@ namespace compass
         private static string GetCardinalName(int angle)
         {
             int a = ((angle % 360) + 360) % 360;
-            if (a == 0) return "북";
-            if (a == 90) return "동";
-            if (a == 180) return "남";
-            if (a == 270) return "서";
+            if (a == 0) return "N";
+            if (a == 90) return "E";
+            if (a == 180) return "S";
+            if (a == 270) return "W";
             return null;
         }
 
