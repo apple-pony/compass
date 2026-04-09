@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using UnityEngine;
 
 namespace Compass
@@ -52,6 +53,11 @@ namespace Compass
         private const float PixelsPerDegree = 4f;       // 1도당 픽셀 수 (넓이/민감도 조절)
         private const int MinorTickStep = 5;            // 작은 눈금 간격
         private const int MajorTickStep = 30;           // 큰 눈금 간격
+
+        // Reflection cache
+        private static FieldInfo _shoulderField;
+        private static object _shoulderInstance;
+        private static bool _shoulderInitialized = false;
 
         private void Awake()
         {
@@ -163,6 +169,10 @@ namespace Compass
             if (Camera.main == null || !Camera.main.enabled)
                 return;
 
+            // Hide when no 3rd person view mod loaded or loaded but switched to default isometric view
+            if (!IsShoulderCameraActive())
+                return;
+
             EnsureTextures();
 
             float yaw = Mathf.Repeat(_target.eulerAngles.y, 360f);
@@ -272,6 +282,71 @@ namespace Compass
             }
 
             GUI.color = old;
+        }
+
+        // -------- Reflection logic --------
+        private static void InitShoulderCamera()
+        {
+            if (_shoulderInitialized)
+                return;
+
+            _shoulderInitialized = true;
+
+            try
+            {
+                foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    foreach (var type in asm.GetTypes())
+                    {
+                        if (type.Namespace == null || !type.Namespace.Contains("ShoulderSurfing"))
+                            continue;
+
+                        var field = type.GetField("shoulderCameraToggled",
+                            BindingFlags.Public |
+                            BindingFlags.NonPublic |
+                            BindingFlags.Static |
+                            BindingFlags.Instance);
+
+                        if (field != null)
+                        {
+                            _shoulderField = field;
+
+                            if (!field.IsStatic)
+                                _shoulderInstance = UnityEngine.Object.FindObjectOfType(type);
+
+                            Debug.Log("[Compass] Shoulder camera field found: " + type.FullName);
+                            return;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Log("[Compass] Reflection error: " + ex);
+            }
+        }
+
+        private static bool IsShoulderCameraActive()
+        {
+            if (!_shoulderInitialized)
+                InitShoulderCamera();
+
+            if (_shoulderField == null)
+                return false;
+
+            try
+            {
+                if (!_shoulderField.IsStatic && _shoulderInstance == null)
+                {
+                    _shoulderInstance = UnityEngine.Object.FindObjectOfType(_shoulderField.DeclaringType);
+                }
+
+                return (bool)_shoulderField.GetValue(_shoulderInstance);
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }
